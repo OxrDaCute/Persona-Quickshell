@@ -11,15 +11,15 @@ import QtQuick
 // driver rather than by Wayland frame callbacks, so a covered-up surface keeps
 // burning CPU unless its animations are actually stopped.
 //
-// Two triggers:
+// Three triggers:
+//   * covered   - automatic, a maximized/fullscreen window hides the desktop.
+//                 Pushed by the personablackout KWin script through
+//                 persona-blackout-bridge, and pulled once at launch.
 //   * idle      - automatic, via ext_idle_notifier_v1 (works on KWin)
 //   * forced    - manual, via `qs ipc call blackout enable|disable|toggle`
 //
-// There is deliberately no "a window is focused" trigger: this compositor
-// advertises neither zwlr_foreign_toplevel_manager_v1 nor
-// org_kde_plasma_window_management, and org.kde.KWin's D-Bus API has no
-// active-window getter, so nothing here can see the window stack. Drive
-// `forced` from outside if you want that behaviour.
+// The shell can't see the window stack itself: this compositor advertises
+// neither zwlr_foreign_toplevel_manager_v1 nor org_kde_plasma_window_management.
 Singleton {
     id: root
 
@@ -37,6 +37,20 @@ Singleton {
 
     readonly property bool active: root.forced || root.windowCovered
         || (root.idleSeconds > 0 && idleMonitor.isIdle)
+
+    // The KWin script only reports changes, so a shell launched over an
+    // already-maximized window would otherwise animate unseen until the next
+    // window change. Ask the bridge for the current state once at launch. If
+    // the bridge isn't running this fails quietly and we stay uncovered.
+    Process {
+        command: ["busctl", "--user", "call", "org.persona.Blackout", "/Blackout",
+            "org.persona.Blackout", "GetCovered"]
+        running: true
+        stdout: SplitParser {
+            // Reply looks like "b true".
+            onRead: data => root.windowCovered = data.trim() === "b true"
+        }
+    }
 
     IdleMonitor {
         id: idleMonitor
