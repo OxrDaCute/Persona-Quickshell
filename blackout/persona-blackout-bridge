@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+"""Bridge between the personablackout KWin script and Persona Quickshell.
+
+KWin scripts can make D-Bus calls but cannot execute processes, and Quickshell's
+IPC is a unix socket rather than D-Bus. This owns org.persona.Blackout on the
+session bus and forwards SetCovered(bool) to `qs ipc call blackout setCovered`.
+
+It also remembers the last state KWin reported and serves it via GetCovered(),
+so a freshly launched shell can sync immediately instead of waiting for the
+next window change (the KWin script only reports changes).
+"""
+
+import os
+import subprocess
+import sys
+
+import gi
+
+gi.require_version("Gio", "2.0")
+gi.require_version("GLib", "2.0")
+from gi.repository import Gio, GLib  # noqa: E402
+
+SHELL_PATH = os.environ.get("PERSONA_SHELL_PATH", os.path.expanduser("~/Persona-Quickshell"))
+BUS_NAME = "org.persona.Blackout"
+OBJ_PATH = "/Blackout"
+
+INTROSPECTION = """
+<node>
+  <interface name='org.persona.Blackout'>
+    <method name='SetCovered'>
+      <arg type='b' name='covered' direction='in'/>
+    </method>
+    <method name='GetCovered'>
+      <arg type='b' name='covered' direction='out'/>
+    </method>
+  </interface>
+</node>
+"""
+
+# Last state KWin reported, whether or not the shell was up to receive it.
+_covered = False
+
+
+def log(msg):
+    print(f"persona-blackout-bridge: {msg}", flush=True)
+
+
+def apply_state(covered):
+    # No deduplication here: the KWin script already only reports changes, and a
+    # shell that restarted may have pulled a state newer than the last one it
+    # accepted, so skipping "duplicates" could leave it out of sync.
+    global _covered
+    _covered = covered
+    cmd = [
+        "qs", "-c", SHELL_PATH, "ipc", "call", "blackout",
+        "setCovered", "true" if covered else "false",
+    ]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=5)
+        if res.returncode != 0:
+            log(f"ipc call failed ({res.returncode}): {res.stderr.strip()}")
+            return
+        log(f"covered = {covered}")
+    except subprocess.TimeoutExpired:
+        log("ipc call timed out (is the shell running?)")
+    except FileNotFoundError:
+        log("`qs` not found on PATH")
+
+
+def on_method_call(conn, sender, path, iface, method, params, invocation):
+    if method == "SetCovered":
+        apply_state(bool(params[0]))
+        invocation.return_value(None)
+    elif method == "GetCovered":
+        invocation.return_value(GLib.Variant("(b)", (_covered,)))
+    else:
+        invocation.return_dbus_error(
+            "org.freedesktop.DBus.Error.UnknownMethod", f"No such method {method}"
+        )
+
+
+def on_bus_acquired(conn, name):
+    node = Gio.DBusNodeInfo.new_for_xml(INTROSPECTION)
+    conn.register_object(
+        OBJ_PATH,
+        node.interfaces[0],
+        on_method_call,
+        None,
+        None,
+    )
+    log(f"owning {name}, shell at {SHELL_PATH}")
+
+
+def on_name_lost(conn, name):
+    log(f"lost bus name {name} — exiting")
+    sys.exit(1)
+
+
+def main():
+    Gio.bus_own_name(
+        Gio.BusType.SESSION,
+        BUS_NAME,
+        Gio.BusNameOwnerFlags.NONE,
+        on_bus_acquired,
+        None,
+        on_name_lost,
+    )
+    GLib.MainLoop().run()
+
+
+if __name__ == "__main__":
+    main()

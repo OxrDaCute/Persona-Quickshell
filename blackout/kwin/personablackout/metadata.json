@@ -1,0 +1,14 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Id": "personablackout",
+        "Name": "Persona Blackout",
+        "Description": "Blanks the Persona Quickshell desktop shell while the active window is maximized or fullscreen.",
+        "Icon": "preferences-desktop-wallpaper",
+        "License": "MIT",
+        "Version": "1.0",
+        "EnabledByDefault": false
+    },
+    "X-Plasma-API": "javascript",
+    "X-Plasma-MainScript": "code/main.js"
+}
