@@ -10,6 +10,18 @@ Scope {
 
     readonly property real vw: 500 / 26.0417
 
+    // One shared 30fps driver for every scrolling wave layer, on every screen.
+    // Previously each of the five wave strips ran its own infinite
+    // NumberAnimation, repainting this window at the full display refresh rate
+    // (120Hz here) for a strip that only travels ~50px per second.
+    property real scrollPhase: 0
+    Timer {
+        interval: 33
+        repeat: true
+        running: !Dat.Blackout.active
+        onTriggered: clockScope.scrollPhase = (clockScope.scrollPhase + 33 / 10000) % 1.0
+    }
+
     Variants {
         model: Quickshell.screens
         PanelWindow {
@@ -33,6 +45,7 @@ Scope {
             Item {
                 id: clockRoot
                 anchors.fill: parent
+                visible: !Dat.Blackout.active
 
                 Item {
                     id: waveContainerOuter
@@ -68,13 +81,7 @@ Scope {
                                 x: waveContainerOuter.width
                             }
 
-                            NumberAnimation on x {
-                                from: 0
-                                to: -waveContainerOuter.width
-                                duration: 10000
-                                loops: Animation.Infinite
-                                running: true
-                            }
+                            x: -waveContainerOuter.width * clockScope.scrollPhase
                         }
                     }
                 }
@@ -285,13 +292,7 @@ Scope {
                 x: waveTextLayer.width
             }
 
-            NumberAnimation on x {
-                from: 0
-                to: -waveTextLayer.width
-                duration: 10000
-                loops: Animation.Infinite
-                running: true
-            }
+            x: -waveTextLayer.width * clockScope.scrollPhase
         }
 
         Text {

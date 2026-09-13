@@ -140,7 +140,7 @@ Scope {
                 Video {
                     id: part2Video
                     anchors.fill: parent
-                    source: Qt.resolvedUrl("../Assets/p3r menu/part2.mp4")
+                    source: root.shouldShow ? Qt.resolvedUrl("../Assets/p3r menu/part2.mp4") : ""
                     fillMode: VideoOutput.PreserveAspectCrop
                     volume: 0
                     visible: false
@@ -166,7 +166,7 @@ Scope {
                 Video {
                     id: part3Video
                     anchors.fill: parent
-                    source: Qt.resolvedUrl("../Assets/p3r menu/part3.mp4")
+                    source: root.shouldShow ? Qt.resolvedUrl("../Assets/p3r menu/part3.mp4") : ""
                     fillMode: VideoOutput.PreserveAspectCrop
                     loops: MediaPlayer.Infinite
                     volume: 0

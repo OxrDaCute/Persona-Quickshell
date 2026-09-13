@@ -29,6 +29,8 @@ Scope {
             WlrLayershell.namespace: "music-player-interactive"
             focusable: false
 
+            visible: !Dat.Blackout.active
+
             Image {
                 id: dialogueBox
                 source: "../Assets/components/player.png"
@@ -160,11 +162,19 @@ Scope {
                                             source: "../Assets/components/AlbumCover-by-Squirrel-Modeller.svg"
                                         }
                                     }
-                                    Behavior on rotation {
-                                        NumberAnimation {
-                                            duration: diskTimer.interval
-                                            easing.type: Easing.Linear
-                                        }
+                                    // Same 6 deg/sec as the old Timer+Behavior pair, but an
+                                    // Animator runs on the render thread and does not re-sync
+                                    // the scene graph from the GUI thread on every frame.
+                                    // Also stops entirely when there is no art to spin.
+                                    RotationAnimator on rotation {
+                                        from: 0
+                                        to: 360
+                                        duration: 60000
+                                        loops: Animation.Infinite
+                                        running: capsuleScope.mpris !== null
+                                            && capsuleScope.mpris.playbackState === MprisPlaybackState.Playing
+                                            && imgDisk.status === Image.Ready
+                                            && !Dat.Blackout.active
                                     }
                                     Behavior on scale {
                                         NumberAnimation {
@@ -182,13 +192,6 @@ Scope {
                                         capsuleScope.mpris.togglePlaying()
                                     onEntered: imgDisk.scale = 0.8
                                     onExited: imgDisk.scale = 1.0
-                                }
-                                Timer {
-                                    id: diskTimer
-                                    interval: 500
-                                    repeat: true
-                                    running: capsuleScope.mpris !== null && capsuleScope.mpris.playbackState === MprisPlaybackState.Playing
-                                    onTriggered: imgDisk.rotation += 3
                                 }
                             }
 

@@ -10,6 +10,11 @@ Scope {
     property var targetScreen: null
     property bool contentVisible: false
 
+    FontLoader {
+        id: bebasNeue
+        source: Qt.resolvedUrl("../Assets/fonts/BebasNeue-Regular.ttf")
+    }
+
     readonly property var barData: [
         {
             role: "LEADER",
@@ -76,7 +81,9 @@ Scope {
             Video {
                 id: bgVideo
                 anchors.fill: parent
-                source: Qt.resolvedUrl("../Assets/videos/Options.mp4")
+                // Loaded only while the panel is up: otherwise this 4MB clip is
+                // opened and software-decoded at shell startup for nothing.
+                source: root.shouldShow ? Qt.resolvedUrl("../Assets/videos/Options.mp4") : ""
                 fillMode: VideoOutput.PreserveAspectCrop
                 loops: MediaPlayer.Infinite
                 volume: 0

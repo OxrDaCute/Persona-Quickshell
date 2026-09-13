@@ -5,7 +5,7 @@ import QtQuick
 Singleton {
     SystemClock {
         id: clock
-        precision: SystemClock.Seconds
+        precision: SystemClock.Minutes
     }
 
     readonly property var now: clock.date

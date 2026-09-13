@@ -13,7 +13,7 @@ WlrLayershell {
     anchors.left: true
     anchors.right: true
     anchors.bottom: true
-    color: "transparent"
+    color: Dat.Blackout.active ? "black" : "transparent"
     exclusionMode: ExclusionMode.Ignore
     focusable: false
     layer: WlrLayer.Bottom
@@ -31,7 +31,7 @@ WlrLayershell {
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
         smooth: true
-        mipmap: true
+        mipmap: false
         visible: false
     }
 
@@ -41,7 +41,7 @@ WlrLayershell {
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
         smooth: true
-        mipmap: true
+        mipmap: false
         visible: false
     }
 
@@ -51,7 +51,7 @@ WlrLayershell {
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
         smooth: true
-        mipmap: true
+        mipmap: false
         visible: false
     }
 
@@ -61,7 +61,7 @@ WlrLayershell {
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
         smooth: true
-        mipmap: true
+        mipmap: false
         visible: false
     }
 
@@ -71,7 +71,7 @@ WlrLayershell {
         anchors.fill: parent
         fillMode: Image.PreserveAspectCrop
         smooth: true
-        mipmap: true
+        mipmap: false
         visible: false
     }
 
@@ -94,7 +94,7 @@ WlrLayershell {
             to: 10
             duration: 800000
             loops: Animation.Infinite
-            running: true
+            running: !Dat.Blackout.active
         }
 
         vertexShader: Qt.resolvedUrl("../Assets/shaders/ripple/ripple.vert.qsb")
@@ -107,7 +107,7 @@ WlrLayershell {
         anchors.fill: parent
         visible: false
         hideSource: true
-        live: true
+        live: !Dat.Blackout.active
     }
 
     // ── Stage 0b: Stars/Rain ──
@@ -127,7 +127,7 @@ WlrLayershell {
             to: 1000
             duration: 500000
             loops: Animation.Infinite
-            running: true
+            running: !Dat.Blackout.active
         }
 
         vertexShader: Qt.resolvedUrl("../Assets/shaders/stars/stars.vert.qsb")
@@ -145,7 +145,7 @@ WlrLayershell {
             sourceItem: s0_bg_stars
             anchors.fill: parent
             hideSource: true
-            live: true
+            live: !Dat.Blackout.active
         }
 
         ShaderEffect {
@@ -161,22 +161,11 @@ WlrLayershell {
                 to: 10000
                 duration: 10000000
                 loops: Animation.Infinite
-                running: true
+                running: !Dat.Blackout.active
             }
 
             vertexShader: Qt.resolvedUrl("../Assets/shaders/motion/motion.vert.qsb")
             fragmentShader: Qt.resolvedUrl("../Assets/shaders/motion/motion.frag.qsb")
-        }
-
-        CavaVisualizer {
-            id: s1_cava
-            anchors {
-                left: parent.left
-                right: parent.right
-                top: parent.top
-                topMargin: 0
-            }
-            height: 555
         }
 
         Image {
@@ -185,7 +174,7 @@ WlrLayershell {
             anchors.fill: parent
             fillMode: Image.PreserveAspectCrop
             smooth: true
-            mipmap: true
+            mipmap: false
         }
     }
 
@@ -196,14 +185,14 @@ WlrLayershell {
         anchors.fill: parent
         visible: false
         hideSource: true
-        live: true
+        live: !Dat.Blackout.active
     }
 
     // ── Stage 2: Parallax ──
     ShaderEffect {
         id: s2_parallax
         anchors.fill: parent
-        visible: true
+        visible: !Dat.Blackout.active
 
         property var source: s1_out
         property real offsetX: root.mouseOffsetX
@@ -219,7 +208,7 @@ WlrLayershell {
     // ── Mouse tracking ──
     MouseArea {
         anchors.fill: parent
-        hoverEnabled: true
+        hoverEnabled: !Dat.Blackout.active
         acceptedButtons: Qt.NoButton
         onPositionChanged: mouse => {
             root.mouseOffsetX = (mouse.x / width - 0.5) * 2.0;

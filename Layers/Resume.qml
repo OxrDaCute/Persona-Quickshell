@@ -53,7 +53,8 @@ Scope {
             Video {
                 id: resumeVideo
                 anchors.fill: parent
-                source: Qt.resolvedUrl("../Assets/videos/Resume.mp4")
+                // 23MB clip - only open it while the panel is actually shown.
+                source: root.shouldShow ? Qt.resolvedUrl("../Assets/videos/Resume.mp4") : ""
                 fillMode: VideoOutput.PreserveAspectCrop
                 loops: MediaPlayer.Infinite
                 volume: 0
